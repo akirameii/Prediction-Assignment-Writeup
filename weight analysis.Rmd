@@ -1,0 +1,60 @@
+---
+title: "Weightlifting Analysis"
+author: "Jian Florence Genara Simanjuntak"
+date: "5/6/2025"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+install.packages("caret")
+install.packages("randomForest")
+install.packages("dplyr")
+
+training <- read.csv("pml-training.csv", na.strings = c("NA", "", "#DIV/0!"))
+testing <- read.csv("pml-testing.csv", na.strings = c("NA", "", "#DIV/0!"))
+
+# Remove columns with NA values
+training <- training[, colSums(is.na(training)) == 0]
+
+# Remove the first 7 columns (non-predictive data)
+training <- training[, -c(1:7)]
+testing <- testing[, colnames(testing) %in% colnames(training)]
+
+set.seed(1234)
+inTrain <- createDataPartition(training$classe, p = 0.7, list = FALSE)
+trainSet <- training[inTrain, ]
+validSet <- training[-inTrain, ]
+
+control <- trainControl(method = "cv", number = 5)
+modelFit <- train(classe ~ ., data = trainSet, method = "rf", trControl = control)
+
+predictions <- predict(modelFit, validSet)
+confusionMatrix(predictions, validSet$classe)
+
+1 - confusionMatrix(predictions, validSet$classe)$overall['Accuracy']
+
+finalPredictions <- predict(modelFit, testing)
+finalPredictions
